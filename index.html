@@ -181,14 +181,10 @@ html += '<div class="space-y-4">';
         return { htmlComment: '', mdComment: '' };
       }
 
-      if (depth === 0) {
-        mdComment += `### u/${comment.author}\n\n${processTextForMarkdown(comment.body)}\n\n`;
-      } else {
-        mdComment += `${indent}<details>\n`;
-        mdComment += `${indent}<summary>Reply from u/${comment.author}</summary>\n\n`;
-        mdComment += `${indent}${processTextForMarkdown(comment.body)}\n\n`;
-        mdComment += `${indent}</details>\n\n`;
-      }
+      const prefix = '> '.repeat(depth);
+
+      mdComment += `${prefix}**u/${comment.author}**  \n`;
+      mdComment += `${prefix}${processTextForMarkdown(comment.body).trim().replace(/\n/g, `\n${prefix}`)}\n\n`;
 
       htmlComment += `
   <div class="comment-wrapper ${depth > 0 ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}">
@@ -213,28 +209,40 @@ html += '<div class="space-y-4">';
 
       return { htmlComment, mdComment };
     }
+function processTextForHtml(text) {
+  if (!text) return '';
 
-    function processTextForHtml(text) {
-      if (!text) return '';
-      
-      let processed = escapeHtml(text);
-      
-      processed = processed.replace(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s]*)?)/gi, (url) => {
-        return `<img src="${url}" alt="Image" class="reddit-image" />`;
-      });
-      
-      processed = processed.replace(/(https?:\/\/[^\s]+)(?![^<]*>)/g, (url) => {
-        if (url.match(/\.(jpg|jpeg|png|gif|webp)/i)) return url;
-        
-        const displayUrl = url.length > 50 ? url.substring(0, 47) + '...' : url;
-        return `<a href="${url}" target="_blank" class="text-blue-600 hover:underline">${displayUrl}</a>`;
-      });
-      
-      processed = processed.replace(/\n/g, '<br>');
-      
-      return processed;
-    }
+  let processed = escapeHtml(text);
 
+  // Replace image URLs with <img> tags
+  processed = processed.replace(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s]*)?)/gi, (url) => {
+    return `<img src="${url}" alt="Image" class="media-rounded" />`;
+  });
+
+  // Replace video URLs with <video> tags
+  processed = processed.replace(/(https?:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:\?[^\s]*)?)/gi, (url) => {
+    return `
+      <video controls class="media-rounded" preload="metadata">
+        <source src="${url}" type="video/${url.split('.').pop().split('?')[0].toLowerCase()}">
+        Your browser does not support the video tag.
+      </video>
+    `;
+  });
+
+  // Replace remaining URLs with clickable links (excluding ones already embedded)
+  processed = processed.replace(/(https?:\/\/[^\s]+)(?![^<]*>)/g, (url) => {
+    if (url.match(/\.(jpg|jpeg|png|gif|webp|mp4|webm|ogg)/i)) return url;
+
+    const displayUrl = url.length > 50 ? url.substring(0, 47) + '...' : url;
+    return `<a href="${url}" target="_blank" class="text-blue-600 hover:underline">${displayUrl}</a>`;
+  });
+
+  // Replace newlines with <br>
+  processed = processed.replace(/\n/g, '<br>');
+
+  return processed;
+}
+   
     function processTextForMarkdown(text) {
       if (!text) return '';
       
@@ -243,7 +251,16 @@ html += '<div class="space-y-4">';
       processed = processed.replace(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s]*)?)/gi, (url) => {
         return `\n\n![Image](${url})\n\n`;
       });
-      
+      // Markdown takes videos using HTML, this is known as MDX
+      processed = processed.replace(/(https?:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:\?[^\s]*)?)/gi, (url) => {
+        return `
+          <video controls class="media-rounded" preload="metadata">
+            <source src="${url}" type="video/${url.split('.').pop().split('?')[0].toLowerCase()}">
+              Your browser does not support the video tag.
+            </video>
+        `;
+      });
+
       processed = processed.replace(/(https?:\/\/[^\s]+)(?![\)\]])/g, (url) => {
         if (url.match(/\.(jpg|jpeg|png|gif|webp)/i)) return url;
         return `[${url}](${url})`;
