@@ -3,32 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+  <title>RedditToMarkdown</title>
+  <!-- tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- font awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script>
+    (function() {
+      const s = localStorage.getItem('color-theme');
+      const p = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const dark = s === 'dark' || (!s && p);
+      document.documentElement.classList.toggle('dark', dark);
+    })();
+  </script>
 </head>
-<body class="bg-gray-100 p-6 font-sans text-gray-800">
+<body class="bg-gray-100 p-6 font-sans text-gray-800 dark:bg-black">
   <div class="mx-auto max-w-4xl grid gap-6">
-    <h1 class="font-bold text-3xl">Reddit →  Markdown</h1>
-    <input id="link_input" class="p-3 border-1 w-full rounded-md mt-4 border-gray-400 bg-white" placeholder="Paste reddit link... "></input>
+    <div class="flex justify-start gap-5">
+      <h1 class="font-bold text-3xl dark:text-white">Reddit →  Markdown</h1>
+      <button id="theme_toggle" class="text-gray-500 dark:text-gray-400 p-2 rounded-lg">
+        <i id="theme-icon" class="fas fa-moon text-2xl"></i>
+      </button>
+    </div>
+    <input id="link_input" class="p-3 border w-full rounded-md mt-4 border-gray-400 bg-white dark:bg-gray-900 dark:text-white" placeholder="Paste reddit link...">
+    </input>
 
     <div>
-    <button id="fetch_rddt_btn" class="p-3 bg-black text-white rounded-md hover:bg-gray-800">Fetch from Reddit</button>
+      <button id="fetch_rddt_btn" class="p-3 bg-black text-white rounded-md hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">Fetch from Reddit</button>
     </div>
-    <hr>
-        <h1 class="font-bold text-2xl">Output</h1>
-        <div id="tabs">
-          <button id="p_v_btn" class="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-md mr-[10px]">Prettier View</button>
-          <button id="r_v_btn" class="p-3 bg-blue-400 text-white hover:bg-blue-500 rounded-md">Raw Markdown View</button>
-        </div>
-        <div id="markdown-output-area">
-          <div id="p_v_out" class="hidden block p-6 bg-white rounded-lg shadow-md">
-
-          </div>
-          <div id="r_v_out" class="hidden block bg-white rounded-lg shadow-md">
-            <textarea id="rawoutarea" readonly rows="30" class="w-full bg-white p-6 rounded-lg shadow-lg font-mono text-sm resize-none"></textarea>
-          </div>
-        </div>
+    <hr class="border-gray-300 dark:border-gray-700">
+    <h1 class="font-bold text-2xl dark:text-white">Output</h1>
+    <div id="tabs">
+      <button id="p_v_btn" class="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-md mr-[10px]">Prettier View</button>
+      <button id="r_v_btn" class="p-3 bg-blue-400 text-white hover:bg-blue-500 rounded-md ">Raw Markdown View</button>
+    </div>
+    <div id="markdown-output-area">
+      <div id="p_v_out" class="hidden block p-6 bg-white rounded-lg shadow-md dark:bg-gray-800 dark:text-white">
+      </div>
+      <div id="r_v_out" class="hidden block bg-white rounded-lg shadow-md dark:bg-gray-800 dark:text-white">
+        <textarea id="rawoutarea" readonly rows="30" class="w-full bg-white p-6 rounded-lg shadow-lg font-mono text-sm resize-none dark:bg-gray-900 dark:text-white"></textarea>
+      </div>
+    </div>
   </div>
+
   <script>
     
     const FETCH_RDDT_BTN = document.getElementById('fetch_rddt_btn');
@@ -36,7 +58,16 @@
     const P_V_OUT = document.getElementById('p_v_out');
     const R_V_BTN = document.getElementById('r_v_btn');  
     const R_V_OUT = document.getElementById('r_v_out');
-    
+
+    document.getElementById('theme_toggle').addEventListener('click', function() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+
+      const icon = document.getElementById('theme-icon');
+      icon.classList.toggle('fa-moon', !isDark);
+      icon.classList.toggle('fa-sun', isDark);
+    });
     FETCH_RDDT_BTN.addEventListener('click', function() {
       const RDDT_LINK = linkToPostID(document.getElementById('link_input').value.trim());
       console.log("rddtbtn clicked!");
@@ -107,16 +138,18 @@
       markdown += `---\n\n## Comments\n\n`;
 
       let html = `
-        <h1 class="text-2xl font-bold mb-2">${escapeHtml(post.title)}</h1>
-        <p class="text-sm text-gray-500 mb-4">Posted by u/${escapeHtml(post.author)}</p>
-      `;
-      
-      if (post.selftext) {
-        html += `<div class="mb-6 prose prose-sm max-w-none">${processTextForHtml(post.selftext)}</div>`;
-      }
-      
-      html += '<hr class="my-6"><h2 class="text-xl font-semibold mb-4">Comments</h2>';
-      html += '<div class="space-y-4">';
+  <h1 class="text-2xl font-bold mb-2 dark:text-white">${escapeHtml(post.title)}</h1>
+  <p class="text-sm text-gray-500 mb-4 dark:text-gray-400">Posted by u/${escapeHtml(post.author)}</p>
+`;
+
+if (post.selftext) {
+  html += `<div class="mb-6 prose prose-sm max-w-none dark:prose-invert">${processTextForHtml(post.selftext)}</div>`;
+}
+
+html += '<hr class="my-6 border-gray-300 dark:border-gray-700">';
+html += '<h2 class="text-xl font-semibold mb-4 dark:text-white">Comments</h2>';
+html += '<div class="space-y-4">';
+ 
 
       if (comments && comments.length > 0) {
         comments.forEach(comment => {
@@ -153,12 +186,13 @@
       }
 
       htmlComment += `
-        <div class="comment-wrapper ${depth > 0 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}">
-          <div class="bg-gray-50 p-4 rounded-lg mb-2">
-            <div class="text-sm font-semibold text-gray-700 mb-2">u/${escapeHtml(comment.author)}</div>
-            <div class="prose prose-sm max-w-none">${processTextForHtml(comment.body)}</div>
-          </div>
-      `;
+  <div class="comment-wrapper ${depth > 0 ? 'ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}">
+    <div class="bg-gray-50 p-4 rounded-lg mb-2 dark:bg-gray-800">
+      <div class="text-sm font-semibold text-gray-700 mb-2 dark:text-gray-300">u/${escapeHtml(comment.author)}</div>
+      <div class="prose prose-sm max-w-none dark:prose-invert">${processTextForHtml(comment.body)}</div>
+    </div>
+`;
+
 
       if (comment.replies && comment.replies.data && comment.replies.data.children) {
         comment.replies.data.children.forEach(reply => {
